@@ -2,6 +2,7 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import { useState } from "react";
 import { Button, Modal } from "react-bootstrap";
 import Card from "./components/Card";
+
 const App = () => {
 	const [products, setProducts] = useState([
 		{
@@ -47,32 +48,54 @@ const App = () => {
 			img: "src/assets/samsung-s24-ultra.png",
 		},
 	]);
+
 	const [show, setShow] = useState(false);
 	const [form, setForm] = useState({
+		id: null,
 		name: "",
 		price: "",
 		quantity: "",
 		img: "",
 	});
+	const [isEditing, setIsEditing] = useState(false);
 
 	const handleSubmit = (e) => {
 		e.preventDefault();
 		if (form.name && form.price) {
-			const newProduct = {
-				id: products.length + 1,
-				...form,
-				price: Number(form.price),
-				quantity: Number(form.quantity),
-			};
-			setProducts([...products, newProduct]);
+			if (isEditing) {
+				setProducts(
+					products.map((item) =>
+						item.id === form.id
+							? {
+									...item,
+									name: form.name,
+									price: Number(form.price),
+									quantity: Number(form.quantity),
+									img: form.img || item.img,
+							  }
+							: item
+					)
+				);
+			} else {
+				const newProduct = {
+					id: products.length + 1,
+					name: form.name,
+					price: Number(form.price),
+					quantity: Number(form.quantity),
+					img: form.img || "src/assets/default-product.png",
+				};
+				setProducts([...products, newProduct]);
+			}
 			setForm({
+				id: null,
 				name: "",
 				price: "",
 				quantity: "",
-				imgUrl: "",
+				img: "",
 			});
+			setIsEditing(false);
+			setShow(false);
 		}
-		setShow(false);
 	};
 
 	const handleChange = (e) => {
@@ -80,69 +103,100 @@ const App = () => {
 		setForm({ ...form, [name]: value });
 	};
 
+	const handleEdit = (product) => {
+		setForm({
+			id: product.id,
+			name: product.name,
+			price: product.price,
+			quantity: product.quantity,
+			img: product.img,
+		});
+		setIsEditing(true);
+		setShow(true);
+	};
+
+	const handleDelete = (id) => {
+		setProducts(products.filter((item) => item.id !== id));
+	};
+
 	return (
 		<div className="container">
 			<div className="row mt-3">
 				{products.map((item) => (
-					<div className="col-md-4" key={item.id}>
-						<Card item={item} />
+					<div className="col-md-4 mb-4" key={item.id}>
+						<Card item={item} onEdit={handleEdit} onDelete={handleDelete} />
 					</div>
 				))}
 			</div>
 			<div className="text-center m-5">
-				<>
-					<Button variant="primary" onClick={() => setShow(true)}>
-						Modalni ochish
-					</Button>
+				<Button
+					variant="primary"
+					onClick={() => {
+						setForm({
+							id: null,
+							name: "",
+							price: "",
+							quantity: "",
+							img: "",
+						});
+						setIsEditing(false);
+						setShow(true);
+					}}
+				>
+					Add New Product
+				</Button>
 
-					<Modal show={show} onHide={() => setShow(false)}>
-						<Modal.Header closeButton>
-							<Modal.Title>Yangi Product Qo'shish</Modal.Title>
-						</Modal.Header>
-						<Modal.Body>
-							{" "}
-							<div className="card gap-2">
-								<input
-									onChange={handleChange}
-									value={form.name}
-									type="text"
-									name="name"
-									placeholder="Product nomi..."
-								/>
-								<input
-									onChange={handleChange}
-									value={form.price}
-									type="text"
-									name="price"
-									placeholder="Product narxi..."
-								/>
-								<input
-									onChange={handleChange}
-									value={form.quantity}
-									type="text"
-									name="quantity"
-									placeholder="Qancha qolgani..."
-								/>
-								<input
-									onChange={handleChange}
-									value={form.imgUrl}
-									type="text"
-									name="img"
-									placeholder="Rasm urli..."
-								/>
-							</div>{" "}
-						</Modal.Body>
-						<Modal.Footer>
-							<Button variant="secondary" onClick={() => setShow(false)}>
-								Yopish
-							</Button>
-							<Button variant="primary" onClick={handleSubmit}>
-								Saqlash
-							</Button>
-						</Modal.Footer>
-					</Modal>
-				</>
-				);
+				<Modal show={show} onHide={() => setShow(false)}>
+					<Modal.Header closeButton>
+						<Modal.Title>
+							{isEditing ? "Productni Tahrirlash" : "Yangi Product Qo'shish"}
+						</Modal.Title>
+					</Modal.Header>
+					<Modal.Body>
+						<div className="card p-3 gap-2">
+							<input
+								onChange={handleChange}
+								value={form.name}
+								type="text"
+								name="name"
+								className="form-control"
+								placeholder="Product nomi..."
+							/>
+							<input
+								onChange={handleChange}
+								value={form.price}
+								type="number"
+								name="price"
+								className="form-control"
+								placeholder="Product narxi..."
+							/>
+							<input
+								onChange={handleChange}
+								value={form.quantity}
+								type="number"
+								name="quantity"
+								className="form-control"
+								placeholder="Qancha qolgani..."
+							/>
+							<input
+								onChange={handleChange}
+								value={form.img}
+								type="text"
+								name="img"
+								className="form-control"
+								placeholder="Rasm urli..."
+							/>
+						</div>
+					</Modal.Body>
+					<Modal.Footer>
+						<Button variant="secondary" onClick={() => setShow(false)}>
+							Yopish
+						</Button>
+						<Button variant="primary" onClick={handleSubmit}>
+							{isEditing ? "O'zgarishlarni saqlash" : "save"}
+						</Button>
+					</Modal.Footer>
+				</Modal>
 			</div>
 		</div>
 	);
